@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pastebin - View Paste</title>
+    <!-- Bootstrap CSS (downloaded locally) -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Pastebin</h1>
+            <a href="/" class="btn btn-outline-primary">Create New Paste</a>
+        </div>
+
+        <!-- Paste content will be loaded here -->
+        <div id="paste-content">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Loading paste...</span>
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="placeholder-glow">
+                        <p class="placeholder col-12"></p>
+                        <p class="placeholder col-12"></p>
+                        <p class="placeholder col-10"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS bundle (includes Popper) -->
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <!-- HTMX -->
+    <script src="/js/htmx.min.js"></script>
+
+    <script>
+        // Extract paste ID from URL and load paste content
+        document.addEventListener('DOMContentLoaded', () => {
+            // Extract the paste ID using regex for more reliability
+            const path = window.location.pathname;
+            const match = path.match(/\/view\/([^\/]+)\/?$/);
+            const pasteId = match ? match[1] : null;
+
+            console.log("Path:", path);
+            console.log("Regex match:", match);
+            console.log("Paste ID:", pasteId);
+
+            if (pasteId) {
+                // Construct API URL with the ID
+                const url = `/api/paste/${pasteId}`;
+                console.log("Fetching from:", url);
+                const pasteContent = document.getElementById('paste-content');
+
+                fetch(url)
+                    .then(response => {
+                        console.log("Response status:", response.status);
+                        if (!response.ok) {
+                            throw new Error(`Paste not found (${response.status})`);
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        console.log("Received HTML, updating content");
+                        pasteContent.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error("Error loading paste:", error);
+                        pasteContent.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h4 class="alert-heading">Error loading paste</h4>
+                                <p>${error.message}</p>
+                                <hr>
+                                <p class="mb-0">The paste may have expired or doesn't exist.</p>
+                                <p class="mt-2">
+                                    <small class="text-muted">Technical details: Path=${path}, ID=${pasteId}</small>
+                                </p>
+                            </div>`;
+                    });
+            } else {
+                console.error("No paste ID found in URL");
+                document.getElementById('paste-content').innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading">Invalid URL</h4>
+                        <p>No paste ID was found in the URL.</p>
+                    </div>`;
+            }
+        });
+
+        // Function to copy paste content
+        function copyPasteContent() {
+            const content = document.querySelector('pre code').innerText;
+            navigator.clipboard.writeText(content)
+                .then(() => alert('Paste content copied to clipboard!'))
+                .catch(err => console.error('Failed to copy:', err));
+        }
+
+        // Function to delete the current paste
+        function deletePaste() {
+            if (!confirm('Are you sure you want to delete this paste? This action cannot be undone.')) {
+                return;
+            }
+
+            // Extract paste ID from URL
+            const path = window.location.pathname;
+            const match = path.match(/\/view\/([^\/]+)\/?$/);
+            const pasteId = match ? match[1] : null;
+
+            if (!pasteId) {
+                alert('Could not determine paste ID');
+                return;
+            }
+
+            console.log("Deleting paste:", pasteId);
+
+            // Send delete request
+            fetch(`/api/paste/${pasteId}`, {
+                method: 'DELETE',
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to delete paste: ${response.status} ${response.statusText}`);
+                }
+                return response.text();
+            })
+            .then(() => {
+                // Show success message and redirect
+                alert('Paste deleted successfully!');
+                window.location.href = '/';
+            })
+            .catch(error => {
+                console.error('Error deleting paste:', error);
+                alert(`Error deleting paste: ${error.message}`);
+            });
+        }
+    </script>
+</body>
+
+</html>
