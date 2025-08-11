@@ -131,10 +131,7 @@
                         method: "DELETE",
                     };
 
-                    fetch(
-                        `http://localhost:3000/api/paste/${id}`,
-                        requestOptions,
-                    )
+                    fetch(`/api/paste/${id}`, requestOptions)
                         .then((response) => {
                             if (!response.ok) {
                                 throw new Error(
