@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Paste - View Paste</title>
+    </head>
+    <style>
+        .container {
+            padding: 1rem;
+        }
+        .row {
+            display: flex;
+        }
+        .actions {
+            display: flex;
+            padding-bottom: 1rem;
+        }
+        .action {
+            padding-right: 1rem;
+        }
+        .content {
+            min-height: 400px;
+            min-width: 600px;
+            max-width: 80vw;
+            overflow-x: auto;
+            border-style: solid;
+        }
+        .properties {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+        .property {
+            padding-top: 1rem;
+        }
+    </style>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="actions">
+                    <div class="action">
+                        <button
+                            id="copyContentBtn"
+                            title="Copy content of this paste"
+                        >
+                            Copy Content
+                        </button>
+                    </div>
+                    <div class="action">
+                        <button
+                            id="copyLinkBtn"
+                            title="Copy link to this paste"
+                        >
+                            Copy Link
+                        </button>
+                    </div>
+                    <div class="action">
+                        <a class="btn" href="index.html">New Paste</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="content">
+                    <pre id="content" class="code">{{ .Content }}</pre>
+                </div>
+
+                <div class="properties">
+                    <div class="property">
+                        <span id="lifetimeSeconds"
+                            >Lifetime (seconds): {{ .LifetimeSeconds }}</span
+                        >
+                    </div>
+                    <div class="property">
+                        <button id="deleteBtn" title="Delete paste">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            (() => {
+                "use strict";
+
+                const copyLinkBtn = document.getElementById("copyLinkBtn");
+                copyLinkBtn.addEventListener("click", function (event) {
+                    event.preventDefault();
+
+                    const link = window.location.href;
+                    try {
+                        navigator.clipboard.writeText(link);
+                        console.log("Link copied to clipboard successfully!");
+                    } catch (err) {
+                        console.error("Failed to copy link: ", err);
+                    }
+                });
+
+                const copyContentBtn =
+                    document.getElementById("copyContentBtn");
+                copyContentBtn.addEventListener("click", function (event) {
+                    event.preventDefault();
+
+                    const content = document.getElementById("content");
+                    try {
+                        navigator.clipboard.writeText(content.textContent);
+                        console.log(
+                            "Content copied to clipboard successfully!",
+                        );
+                    } catch (err) {
+                        console.error("Failed to copy Content: ", err);
+                    }
+                });
+
+                const deleteBtn = document.getElementById("deleteBtn");
+                deleteBtn.addEventListener("click", function (event) {
+                    event.preventDefault();
+
+                    const urlParams = new URLSearchParams(
+                        window.location.search,
+                    );
+                    const id = urlParams.get("id");
+
+                    if (id === "") {
+                        alert("Error!");
+                        return;
+                    }
+
+                    const requestOptions = {
+                        method: "DELETE",
+                    };
+
+                    fetch(
+                        `http://localhost:3000/api/paste/${id}`,
+                        requestOptions,
+                    )
+                        .then((response) => {
+                            if (!response.ok) {
+                                throw new Error(
+                                    `HTTP error! status: ${response.status}`,
+                                );
+                            }
+                            return;
+                        })
+                        .then((data) => {
+                            console.log("Success:", data);
+                            window.location.href = "/";
+                        })
+                        .catch((error) => {
+                            // Handle any errors that occurred during the fetch operation
+                            console.error(
+                                "There was a problem with the fetch operation:",
+                                error,
+                            );
+                        });
+                });
+            })();
+        </script>
+    </body>
+</html>

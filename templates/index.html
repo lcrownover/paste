@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Paste - Create New Paste</title>
+    </head>
+    <style>
+        .container {
+            display: flex;
+            padding: 1rem;
+        }
+        .form {
+            display: flex;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+        .field {
+            margin-top: 1rem;
+        }
+        textarea {
+            width: 600px;
+            height: 400px;
+        }
+    </style>
+    <body>
+        <div class="container">
+            <form class="form" id="paste-form">
+                <div class="content">
+                    <div class="field">
+                        <textarea
+                            class="content"
+                            id="paste-content"
+                            name="content"
+                            rows="12"
+                            required
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div class="options">
+                    <div class="field">
+                        <label for="paste-lifetime" class="form-label"
+                            >Lifetime</label
+                        >
+                        <select
+                            class="form-select"
+                            id="paste-lifetime"
+                            name="lifetime"
+                            required
+                        >
+                            <option value="3600">1 Hour</option>
+                            <option value="86400" selected>1 Day</option>
+                            <option value="604800">1 Week</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <button type="submit">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <script>
+            (() => {
+                "use strict";
+
+                const myForm = document.getElementById("paste-form");
+                myForm.addEventListener("submit", function (event) {
+                    event.preventDefault();
+
+                    const content =
+                        document.getElementById("paste-content").value;
+                    const lifetime =
+                        document.getElementById("paste-lifetime").value;
+
+                    if (content === "" || lifetime === "") {
+                        alert("Please fill in all fields.");
+                        return;
+                    }
+
+                    console.log("Content:", content);
+                    console.log("Lifetime:", lifetime);
+
+                    const pasteData = {
+                        content: content,
+                        lifetimeSeconds: Number(lifetime),
+                    };
+
+                    const requestOptions = {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(pasteData),
+                    };
+
+                    fetch("http://localhost:3000/api/paste", requestOptions)
+                        .then((response) => {
+                            if (!response.ok) {
+                                throw new Error(
+                                    `HTTP error! status: ${response.status}`,
+                                );
+                            }
+                            return response.json();
+                        })
+                        .then((data) => {
+                            console.log("Success:", data);
+                            window.location.href = "?id=" + data.id;
+                        })
+                        .catch((error) => {
+                            // Handle any errors that occurred during the fetch operation
+                            console.error(
+                                "There was a problem with the fetch operation:",
+                                error,
+                            );
+                        });
+                });
+            })();
+        </script>
+    </body>
+</html>
