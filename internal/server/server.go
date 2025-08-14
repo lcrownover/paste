@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net/http"
 
@@ -13,6 +14,7 @@ type Server struct {
 	redisAddr string
 	Rdb       *redis.Client
 	mux       *http.ServeMux
+	templates *template.Template
 }
 
 func NewServer(httpAddr, redisAddr string) (*Server, error) {
@@ -21,6 +23,12 @@ func NewServer(httpAddr, redisAddr string) (*Server, error) {
 		redisAddr: redisAddr,
 		mux:       http.NewServeMux(),
 	}
+
+	tmpl, err := template.ParseGlob("templates/*.html")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse templates: %v", err)
+	}
+	s.templates = tmpl
 
 	// Static file server for html/css/js
 	// fs := http.FileServer(http.Dir("./static"))
@@ -37,7 +45,7 @@ func NewServer(httpAddr, redisAddr string) (*Server, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: s.redisAddr,
 	})
-	_, err := rdb.Ping().Result()
+	_, err = rdb.Ping().Result()
 	if err != nil {
 		slog.Error("Failed to connect to Redis", "error", err)
 		return nil, fmt.Errorf("failed to connect to redis database: %v", err)

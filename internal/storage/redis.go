@@ -57,11 +57,12 @@ func CreatePaste(rdb *redis.Client, content string, lifetimeSeconds int64) (*Pas
 		return nil, fmt.Errorf("failed to create paste in redis: %v", err)
 	}
 
-	createdPaste, found, err := GetPaste(rdb, pasteID)
-	if err != nil || !found {
-		slog.Error("Failed to verify paste was saved", "id", pasteID, "error", err)
-	} else {
-		slog.Info("Paste saved and verified in Redis", "id", pasteID)
+	slog.Info("Paste saved to Redis", "id", pasteID)
+
+	createdPaste := &Paste{
+		ID:              pasteID,
+		Content:         content,
+		LifetimeSeconds: lifetimeSeconds,
 	}
 
 	return createdPaste, nil
